@@ -59,11 +59,12 @@ jobs:
       - name: Accept Android SDK licenses
         run: yes | $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses --sdk_root=$HOME/android-sdk
 
-   # Step 9: Set Android environment
+   # Step 9: Set only ANDROID_HOME
       - name: Set Android environment
         run: |
-            echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
-            echo "PATH=$HOME/android-sdk/cmdline-tools/latest/bin:$HOME/android-sdk/platform-tools:$HOME/android-sdk/emulator:$PATH" >> $GITHUB_ENV
+          unset ANDROID_SDK_ROOT
+          echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
+          echo "PATH=$HOME/android-sdk/cmdline-tools/latest/bin:$HOME/android-sdk/platform-tools:$HOME/android-sdk/emulator:$PATH" >> $GITHUB_ENV
 
       # Step 10: Build the APK
       - name: Build Release APK
