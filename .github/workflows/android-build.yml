@@ -45,13 +45,20 @@ jobs:
 
       # 7️⃣ Fix missing React Navigation + Reanimated deps
       - run: |
-          yarn add @react-navigation/native @react-navigation/stack
-          yarn add react-native-screens react-native-safe-area-context react-native-gesture-handler react-native-reanimated react-native-get-random-values
-          yarn add --dev jetifier
-          npx jetifier
+            yarn add @react-navigation/native @react-navigation/stack
+            yarn add react-native-screens react-native-safe-area-context react-native-gesture-handler react-native-reanimated react-native-get-random-values
+            yarn add --dev jetifier
+            npx jetifier
 
-      # 8️⃣ Clean Gradle cache
+      # 8️⃣ Patch Reanimated for CI
+      - name: Patch react-native-reanimated
+        run: |
+            export NODE_BINARY=$(which node)
+            npx react-native-reanimated/scripts/prepare
+
+      # 9️⃣ Clean Gradle cache
       - run: cd android && ./gradlew clean && cd ..
+
 
       # 9️⃣ Pre-bundle React Native JS
       - name: Bundle React Native assets
