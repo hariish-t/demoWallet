@@ -59,13 +59,15 @@ jobs:
           npx jetifier
 
       # 🔟 Patch Reanimated for CI (Hermes)
-      - name: Patch react-native-reanimated
+      - name: Patch react-native-reanimated for CI
         run: |
-          if [ -f ./node_modules/react-native-reanimated/scripts/prepare.js ]; then
+          export NODE_BINARY=$(which node)
+            if [ -f ./node_modules/react-native-reanimated/scripts/prepare.js ]; then
             node ./node_modules/react-native-reanimated/scripts/prepare.js
-          else
+            else
             echo "Reanimated prepare.js not found, skipping..."
-          fi
+             fi
+
 
       # 1️⃣1️⃣ Clean Gradle before build
       - name: Clean Gradle
