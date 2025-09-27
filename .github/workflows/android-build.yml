@@ -45,23 +45,21 @@ jobs:
 
       # 7️⃣ Fix missing React Navigation + Reanimated deps
       - run: |
-            yarn add @react-navigation/native @react-navigation/stack
-            yarn add react-native-screens react-native-safe-area-context react-native-gesture-handler react-native-reanimated react-native-get-random-values
-            yarn add --dev jetifier
-            npx jetifier
+          yarn add @react-navigation/native @react-navigation/stack
+          yarn add react-native-screens react-native-safe-area-context react-native-gesture-handler react-native-reanimated react-native-get-random-values
+          yarn add --dev jetifier
+          npx jetifier
 
-      # 8️⃣ Patch Reanimated for CI
+      # 8️⃣ Patch Reanimated for CI (Hermes)
       - name: Patch react-native-reanimated
         run: |
-         export NODE_BINARY=$(which node)
-         node ./node_modules/react-native-reanimated/scripts/prepare.js
-
+          export NODE_BINARY=$(which node)
+          node ./node_modules/react-native-reanimated/scripts/prepare.js || echo "Reanimated prepare skipped"
 
       # 9️⃣ Clean Gradle cache
       - run: cd android && ./gradlew clean && cd ..
 
-
-      # 9️⃣ Pre-bundle React Native JS
+      # 🔟 Pre-bundle React Native JS
       - name: Bundle React Native assets
         run: |
           mkdir -p android/app/src/main/assets
@@ -72,17 +70,21 @@ jobs:
             --bundle-output android/app/src/main/assets/index.android.bundle \
             --assets-dest android/app/src/main/res
 
-      # 🔟 Install required SDK components + NDK
+      # 1️⃣1️⃣ Install required SDK components + NDK
       - run: |
-          yes | sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0" "ndk;27.1.12297006"
+          yes | sdkmanager \
+            "platform-tools" \
+            "platforms;android-36" \
+            "build-tools;36.0.0" \
+            "ndk;27.1.12297006"
 
-      # 1️⃣1️⃣ Accept licenses
+      # 1️⃣2️⃣ Accept licenses
       - run: yes | sdkmanager --licenses
 
-      # 1️⃣2️⃣ Build APK
+      # 1️⃣3️⃣ Build APK
       - run: cd android && ./gradlew assembleRelease --no-daemon
 
-      # 1️⃣3️⃣ Upload APK artifact
+      # 1️⃣4️⃣ Upload APK artifact
       - uses: actions/upload-artifact@v4
         with:
           name: demoWallet-release-apk
