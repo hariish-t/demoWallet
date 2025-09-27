@@ -12,64 +12,62 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout repo
+      # 1️⃣ Checkout repo
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Step 2: Set up Java
-      - name: Set up JDK 17
+      # 2️⃣ Set up JDK 17
+      - name: Set up JDK
         uses: actions/setup-java@v3
         with:
           distribution: temurin
           java-version: 17
 
-      # Step 3: Install Node.js
+      # 3️⃣ Set up Node.js
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 20
 
-      # Step 4: Install Yarn
+      # 4️⃣ Install Yarn
       - name: Install Yarn
         run: npm install --global yarn
 
-      # Step 5: Install dependencies
+      # 5️⃣ Install dependencies
       - name: Install dependencies
         run: yarn install
 
-      # Step 6: Download Android Command-line Tools
-      - name: Install Android SDK CLI
+      # 6️⃣ Download Android CLI tools
+      - name: Download Android Command-line Tools
         run: |
-          mkdir -p $HOME/android-sdk
+          mkdir -p $HOME/android-sdk/cmdline-tools
           curl -o commandlinetools.zip https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
           unzip commandlinetools.zip -d $HOME/android-sdk/cmdline-tools
           mv $HOME/android-sdk/cmdline-tools/cmdline-tools $HOME/android-sdk/cmdline-tools/latest
-          
-      # Step 7: Install SDK components
-      - name: Install SDK packages
+
+      # 7️⃣ Set ANDROID_HOME correctly
+      - name: Set Android SDK environment
+        run: |
+          echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
+          echo "PATH=$HOME/android-sdk/cmdline-tools/latest/bin:$HOME/android-sdk/platform-tools:$PATH" >> $GITHUB_ENV
+
+      # 8️⃣ Accept SDK licenses
+      - name: Accept SDK licenses
+        run: yes | $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses
+
+      # 9️⃣ Install required SDK packages
+      - name: Install Android SDK packages
         run: |
           yes | $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager \
-            --sdk_root=$HOME/android-sdk \
             "platform-tools" \
             "platforms;android-36" \
-            "build-tools;36.0.0" \
-            "system-images;android-36;google_apis;x86_64"
+            "build-tools;36.0.0"
 
-      # Step 8: Accept licenses
-      - name: Accept Android SDK licenses
-        run: yes | $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses --sdk_root=$HOME/android-sdk
-
-      - name: Configure Android SDK
-        run: |
-          unset ANDROID_SDK_ROOT
-          echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV 
-          echo "PATH=$HOME/android-sdk/cmdline-tools/latest/bin:$HOME/android-sdk/platform-tools:$HOME/android-sdk/emulator:$PATH" >> $GITHUB_ENV
-
-      # Step 10: Build the APK
+      # 🔟 Build Release APK
       - name: Build Release APK
         run: cd android && ./gradlew assembleRelease --no-daemon
 
-           # Step 11: Upload APK
+      # 1️⃣1️⃣ Upload APK
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
