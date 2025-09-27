@@ -26,51 +26,52 @@ jobs:
           export ANDROID_SDK_ROOT=/usr/local/lib/android/sdk
           export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools
 
-      # 3️⃣ Set up JDK
+      # 3️⃣ Setup JDK 17
       - uses: actions/setup-java@v3
         with:
           distribution: temurin
           java-version: 17
 
-      # 4️⃣ Set up Node.js
+      # 4️⃣ Setup Node.js 20
       - uses: actions/setup-node@v3
         with:
           node-version: 20
 
-      # 5️⃣ Install Yarn
+      # 5️⃣ Install Yarn globally
       - run: npm install -g yarn
 
-      # 6️⃣ Install project dependencies
-      - run: yarn install
+      # 6️⃣ Verify Gradle wrapper
+      - name: Verify Gradle Wrapper
+        run: ./android/gradlew --version
 
-      # 7️⃣ Set NODE_BINARY for Gradle
+      # 7️⃣ Install project dependencies (frozen lockfile)
+      - run: yarn install --frozen-lockfile
+
+      # 8️⃣ Set NODE_BINARY for Reanimated + Gradle
       - name: Set NODE_BINARY
         run: echo "NODE_BINARY=$(which node)" >> $GITHUB_ENV
 
-      # 8️⃣ Fix missing React Navigation + Reanimated deps
+      # 9️⃣ Fix React Navigation + Reanimated dependencies
       - run: |
           yarn add @react-navigation/native @react-navigation/stack
           yarn add react-native-screens react-native-safe-area-context react-native-gesture-handler react-native-reanimated react-native-get-random-values
           yarn add --dev jetifier
           npx jetifier
 
-      # 9️⃣ Patch Reanimated for CI (Hermes)
+      # 🔟 Patch Reanimated for CI (Hermes)
       - name: Patch react-native-reanimated
         run: |
-          export NODE_BINARY=$(which node)
           if [ -f ./node_modules/react-native-reanimated/scripts/prepare.js ]; then
             node ./node_modules/react-native-reanimated/scripts/prepare.js
           else
             echo "Reanimated prepare.js not found, skipping..."
           fi
 
-      # 🔟 Ensure lockfile consistency
-      - run: yarn install --frozen-lockfile
+      # 1️⃣1️⃣ Clean Gradle before build
+      - name: Clean Gradle
+        run: cd android && ./gradlew clean && cd ..
 
-      # 1️⃣1️⃣ Clean Gradle
-      - run: cd android && ./gradlew clean && cd ..
-
-      # 1️⃣2️⃣ Pre-bundle React Native assets
+      # 1️⃣2️⃣ Pre-bundle React Native JS assets
       - name: Bundle React Native assets
         run: |
           mkdir -p android/app/src/main/assets
@@ -82,18 +83,20 @@ jobs:
             --assets-dest android/app/src/main/res
 
       # 1️⃣3️⃣ Install required SDK components + NDK
-      - run: |
+      - name: Install Android SDK & NDK
+        run: |
           yes | sdkmanager \
             "platform-tools" \
             "platforms;android-36" \
             "build-tools;36.0.0" \
             "ndk;27.1.12297006"
 
-      # 1️⃣4️⃣ Accept licenses
+      # 1️⃣4️⃣ Accept SDK licenses
       - run: yes | sdkmanager --licenses
 
-      # 1️⃣5️⃣ Build APK
-      - run: cd android && ./gradlew assembleRelease --no-daemon
+      # 1️⃣5️⃣ Build Release APK
+      - name: Build APK
+        run: cd android && ./gradlew assembleRelease --no-daemon --stacktrace
 
       # 1️⃣6️⃣ Upload APK artifact
       - uses: actions/upload-artifact@v4
