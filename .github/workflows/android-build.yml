@@ -15,13 +15,13 @@ jobs:
       # 1️⃣ Checkout code
       - uses: actions/checkout@v3
 
-      # 2️⃣ Set Android SDK path (⚡ fixed)
+      # 2️⃣ Set Android SDK path (⚡ use preinstalled SDK)
       - name: Set Android SDK path
         run: |
-          unset ANDROID_SDK_ROOT
-          echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
-          echo "$HOME/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
-          echo "$HOME/android-sdk/platform-tools" >> $GITHUB_PATH
+          echo "ANDROID_HOME=/usr/local/lib/android/sdk" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=/usr/local/lib/android/sdk" >> $GITHUB_ENV
+          echo "/usr/local/lib/android/sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          echo "/usr/local/lib/android/sdk/platform-tools" >> $GITHUB_PATH
 
       # 3️⃣ Set up JDK
       - uses: actions/setup-java@v3
@@ -40,15 +40,17 @@ jobs:
       # 6️⃣ Install project dependencies
       - run: yarn install
 
-            # 7️⃣ Install React Navigation dependencies (⚡ fix)
+      # 7️⃣ Fix missing React Navigation + Reanimated deps
       - run: |
           yarn add @react-navigation/native @react-navigation/stack
           yarn add react-native-screens react-native-safe-area-context react-native-gesture-handler react-native-reanimated react-native-get-random-values
+          yarn add --dev jetifier
+          npx jetifier
 
-      # 7️⃣ Clean Gradle cache
+      # 8️⃣ Clean Gradle cache
       - run: cd android && ./gradlew clean && cd ..
 
-      # 8️⃣ Pre-bundle React Native JS (⚡ required)
+      # 9️⃣ Pre-bundle React Native JS
       - name: Bundle React Native assets
         run: |
           mkdir -p android/app/src/main/assets
@@ -59,27 +61,20 @@ jobs:
             --bundle-output android/app/src/main/assets/index.android.bundle \
             --assets-dest android/app/src/main/res
 
-      # 9️⃣ Install Android SDK command-line tools
+      # 🔟 Install required SDK components
       - run: |
-          mkdir -p $HOME/android-sdk
-          curl -o cmdline-tools.zip https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
-          unzip cmdline-tools.zip -d $HOME/android-sdk/cmdline-tools
-          mv $HOME/android-sdk/cmdline-tools/cmdline-tools $HOME/android-sdk/cmdline-tools/latest
-
-      # 🔟 Install SDK components
-      - run: |
-          yes | $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager \
+          yes | sdkmanager \
             "platform-tools" \
-            "platforms;android-36" \
-            "build-tools;36.0.0"
+            "platforms;android-34" \
+            "build-tools;34.0.0"
 
       # 1️⃣1️⃣ Accept licenses
-      - run: yes | $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses
+      - run: yes | sdkmanager --licenses
 
       # 1️⃣2️⃣ Build APK
       - run: cd android && ./gradlew assembleRelease --no-daemon
 
-      # 1️⃣3️⃣ Upload APK
+      # 1️⃣3️⃣ Upload APK artifact
       - uses: actions/upload-artifact@v4
         with:
           name: demoWallet-release-apk
