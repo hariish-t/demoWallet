@@ -73,7 +73,7 @@ def enableProguardInReleaseBuilds = false
 def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 
 project.ext.react = [
-    enableHermes: true  // <- required for Reanimated
+    enableHermes: false  
 ]
 
 android {
