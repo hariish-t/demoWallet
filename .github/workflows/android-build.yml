@@ -43,32 +43,34 @@ jobs:
       # 6️⃣ Install project dependencies
       - run: yarn install
 
-      - name: Set Node for Gradle
-        run: |
-          echo "NODE_BINARY=$(which node)" >> $GITHUB_ENV
+      # 7️⃣ Set NODE_BINARY for Gradle
+      - name: Set NODE_BINARY
+        run: echo "NODE_BINARY=$(which node)" >> $GITHUB_ENV
 
-
-      # 7️⃣ Fix missing React Navigation + Reanimated deps
+      # 8️⃣ Fix missing React Navigation + Reanimated deps
       - run: |
           yarn add @react-navigation/native @react-navigation/stack
           yarn add react-native-screens react-native-safe-area-context react-native-gesture-handler react-native-reanimated react-native-get-random-values
           yarn add --dev jetifier
           npx jetifier
 
-      # 8️⃣ Patch Reanimated for CI (Hermes)
+      # 9️⃣ Patch Reanimated for CI (Hermes)
       - name: Patch react-native-reanimated
         run: |
           export NODE_BINARY=$(which node)
           if [ -f ./node_modules/react-native-reanimated/scripts/prepare.js ]; then
-          node ./node_modules/react-native-reanimated/scripts/prepare.js
+            node ./node_modules/react-native-reanimated/scripts/prepare.js
           else
-          echo "Reanimated prepare.js not found, skipping..."
+            echo "Reanimated prepare.js not found, skipping..."
           fi
 
-      # 9️⃣ Clean Gradle cache
+      # 🔟 Ensure lockfile consistency
+      - run: yarn install --frozen-lockfile
+
+      # 1️⃣1️⃣ Clean Gradle
       - run: cd android && ./gradlew clean && cd ..
 
-      # 🔟 Pre-bundle React Native JS
+      # 1️⃣2️⃣ Pre-bundle React Native assets
       - name: Bundle React Native assets
         run: |
           mkdir -p android/app/src/main/assets
@@ -79,7 +81,7 @@ jobs:
             --bundle-output android/app/src/main/assets/index.android.bundle \
             --assets-dest android/app/src/main/res
 
-      # 1️⃣1️⃣ Install required SDK components + NDK
+      # 1️⃣3️⃣ Install required SDK components + NDK
       - run: |
           yes | sdkmanager \
             "platform-tools" \
@@ -87,13 +89,13 @@ jobs:
             "build-tools;36.0.0" \
             "ndk;27.1.12297006"
 
-      # 1️⃣2️⃣ Accept licenses
+      # 1️⃣4️⃣ Accept licenses
       - run: yes | sdkmanager --licenses
 
-      # 1️⃣3️⃣ Build APK
+      # 1️⃣5️⃣ Build APK
       - run: cd android && ./gradlew assembleRelease --no-daemon
 
-      # 1️⃣4️⃣ Upload APK artifact
+      # 1️⃣6️⃣ Upload APK artifact
       - uses: actions/upload-artifact@v4
         with:
           name: demoWallet-release-apk
