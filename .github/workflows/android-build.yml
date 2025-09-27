@@ -15,10 +15,12 @@ jobs:
       # 1️⃣ Checkout code
       - uses: actions/checkout@v3
 
-      # 2️⃣ Force SDK path correctly
+      # 2️⃣ Force SDK path
       - name: Set Android SDK path
         run: |
+          # Remove conflicting variable
           unset ANDROID_SDK_ROOT
+          # Set ANDROID_HOME and PATH
           echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
           echo "PATH=$HOME/android-sdk/cmdline-tools/latest/bin:$HOME/android-sdk/platform-tools:$PATH" >> $GITHUB_ENV
 
@@ -56,8 +58,13 @@ jobs:
       # 9️⃣ Accept licenses
       - run: yes | $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses
 
-      # 🔟 Build APK
-      - run: cd android && ./gradlew assembleRelease --no-daemon
+      # 🔟 Build APK (force ANDROID_HOME)
+      - name: Build Release APK
+        run: |
+          export ANDROID_SDK_ROOT=""
+          export ANDROID_HOME=$HOME/android-sdk
+          cd android
+          ./gradlew assembleRelease --no-daemon -Pandroid.home=$ANDROID_HOME
 
       # 1️⃣1️⃣ Upload APK
       - uses: actions/upload-artifact@v4
