@@ -43,6 +43,11 @@ jobs:
       # 6️⃣ Install project dependencies
       - run: yarn install
 
+      - name: Set Node for Gradle
+        run: |
+          echo "NODE_BINARY=$(which node)" >> $GITHUB_ENV
+
+
       # 7️⃣ Fix missing React Navigation + Reanimated deps
       - run: |
           yarn add @react-navigation/native @react-navigation/stack
@@ -54,7 +59,11 @@ jobs:
       - name: Patch react-native-reanimated
         run: |
           export NODE_BINARY=$(which node)
-          node ./node_modules/react-native-reanimated/scripts/prepare.js || echo "Reanimated prepare skipped"
+          if [ -f ./node_modules/react-native-reanimated/scripts/prepare.js ]; then
+          node ./node_modules/react-native-reanimated/scripts/prepare.js
+          else
+          echo "Reanimated prepare.js not found, skipping..."
+          fi
 
       # 9️⃣ Clean Gradle cache
       - run: cd android && ./gradlew clean && cd ..
