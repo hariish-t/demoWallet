@@ -15,12 +15,10 @@ jobs:
       # 1️⃣ Checkout code
       - uses: actions/checkout@v3
 
-      # 2️⃣ Force SDK path
+      # 2️⃣ Force SDK path correctly
       - name: Set Android SDK path
         run: |
-          # Remove conflicting variable
           unset ANDROID_SDK_ROOT
-          # Set ANDROID_HOME and PATH
           echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
           echo "PATH=$HOME/android-sdk/cmdline-tools/latest/bin:$HOME/android-sdk/platform-tools:$PATH" >> $GITHUB_ENV
 
@@ -38,35 +36,36 @@ jobs:
       # 5️⃣ Install Yarn
       - run: npm install -g yarn
 
-      # 6️⃣ Install dependencies
+      # 6️⃣ Install project dependencies
       - run: yarn install
 
-      # 7️⃣ Install Android SDK command-line tools
+      # 7️⃣ Install missing RN dependencies for navigation
+      - run: yarn add @react-navigation/stack react-native-screens react-native-safe-area-context
+
+      # 8️⃣ Reset Metro cache (prevents JS bundling errors)
+      - run: yarn start --reset-cache --max-workers 1 & sleep 10 && pkill -f "yarn start"
+
+      # 9️⃣ Install Android SDK command-line tools
       - run: |
           mkdir -p $HOME/android-sdk
           curl -o cmdline-tools.zip https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
           unzip cmdline-tools.zip -d $HOME/android-sdk/cmdline-tools
           mv $HOME/android-sdk/cmdline-tools/cmdline-tools $HOME/android-sdk/cmdline-tools/latest
 
-      # 8️⃣ Install SDK components
+      # 🔟 Install SDK components
       - run: |
           yes | $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager \
             "platform-tools" \
             "platforms;android-36" \
             "build-tools;36.0.0"
 
-      # 9️⃣ Accept licenses
+      # 1️⃣1️⃣ Accept licenses
       - run: yes | $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses
 
-      # 🔟 Build APK (force ANDROID_HOME)
-      - name: Build Release APK
-        run: |
-          export ANDROID_SDK_ROOT=""
-          export ANDROID_HOME=$HOME/android-sdk
-          cd android
-          ./gradlew assembleRelease --no-daemon -Pandroid.home=$ANDROID_HOME
+      # 1️⃣2️⃣ Build APK
+      - run: cd android && ./gradlew assembleRelease --no-daemon
 
-      # 1️⃣1️⃣ Upload APK
+      # 1️⃣3️⃣ Upload APK
       - uses: actions/upload-artifact@v4
         with:
           name: demoWallet-release-apk
