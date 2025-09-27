@@ -53,8 +53,9 @@ jobs:
       # 8️⃣ Patch Reanimated for CI
       - name: Patch react-native-reanimated
         run: |
-            export NODE_BINARY=$(which node)
-            npx react-native-reanimated/scripts/prepare
+         export NODE_BINARY=$(which node)
+         node ./node_modules/react-native-reanimated/scripts/prepare.js
+
 
       # 9️⃣ Clean Gradle cache
       - run: cd android && ./gradlew clean && cd ..
