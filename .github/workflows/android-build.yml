@@ -40,6 +40,11 @@ jobs:
       # 6️⃣ Install project dependencies
       - run: yarn install
 
+            # 7️⃣ Install React Navigation dependencies (⚡ fix)
+      - run: |
+          yarn add @react-navigation/native @react-navigation/stack
+          yarn add react-native-screens react-native-safe-area-context react-native-gesture-handler react-native-reanimated react-native-get-random-values
+
       # 7️⃣ Clean Gradle cache
       - run: cd android && ./gradlew clean && cd ..
 
