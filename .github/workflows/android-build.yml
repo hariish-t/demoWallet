@@ -40,9 +40,14 @@ jobs:
       # 5️⃣ Install Yarn globally
       - run: npm install -g yarn
 
-      # 6️⃣ Verify Gradle wrapper
-      - name: Verify Gradle Wrapper
-        run: ./android/gradlew --version
+      # 6️⃣ Cache node_modules & Gradle
+      - name: Cache Node modules & Gradle
+        uses: actions/cache@v3
+        with:
+          path: |
+            node_modules
+            android/.gradle
+          key: ${{ runner.os }}-node-${{ hashFiles('**/yarn.lock') }}
 
       # 7️⃣ Install project dependencies
       - run: yarn install --frozen-lockfile
@@ -61,7 +66,7 @@ jobs:
             echo "Reanimated prepare.js not found, skipping..."
           fi
 
-      # 1️⃣0️⃣ Clean Gradle
+      # 🔟 Clean Gradle
       - name: Clean Gradle
         run: cd android && ./gradlew clean && cd ..
 
@@ -74,7 +79,8 @@ jobs:
             --dev false \
             --entry-file index.js \
             --bundle-output android/app/src/main/assets/index.android.bundle \
-            --assets-dest android/app/src/main/res
+            --assets-dest android/app/src/main/res \
+            --reset-cache
 
       # 1️⃣2️⃣ Install required SDK components + NDK
       - name: Install Android SDK & NDK
