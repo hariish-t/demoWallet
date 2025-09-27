@@ -45,11 +45,13 @@ jobs:
           unzip commandlinetools.zip -d $HOME/android-sdk/cmdline-tools
           mv $HOME/android-sdk/cmdline-tools/cmdline-tools $HOME/android-sdk/cmdline-tools/latest
 
-      # 7️⃣ Set ANDROID_HOME correctly
+      # 7️⃣ Set Android SDK environment
       - name: Set Android SDK environment
         run: |
           echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
           echo "PATH=$HOME/android-sdk/cmdline-tools/latest/bin:$HOME/android-sdk/platform-tools:$PATH" >> $GITHUB_ENV
+          unset ANDROID_SDK_ROOT
+
 
       # 8️⃣ Accept SDK licenses
       - name: Accept SDK licenses
