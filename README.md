@@ -16,7 +16,7 @@ npm start
 
 # OR using Yarn
 yarn start
-```
+``` 
 
 ## Step 2: Build and run your app
 
