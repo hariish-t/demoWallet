@@ -1,62 +1,49 @@
 name: Android Build
-
 on:
   push:
     branches:
       - main
   workflow_dispatch:
-
 jobs:
   build:
     name: Build Release APK
     runs-on: ubuntu-latest
-
     steps:
       # 1️⃣ Checkout code
       - uses: actions/checkout@v3
-
+      
       # 2️⃣ Setup JDK
       - uses: actions/setup-java@v3
         with:
           distribution: temurin
           java-version: 17
-
+          
       # 3️⃣ Setup Node
       - uses: actions/setup-node@v3
         with:
           node-version: 20
-
+          
       # 4️⃣ Install Yarn
       - run: npm install -g yarn
-
+      
       # 5️⃣ Cache node_modules
       - uses: actions/cache@v3
         with:
           path: node_modules
           key: ${{ runner.os }}-modules-${{ hashFiles('**/yarn.lock') }}
-
+          
       # 6️⃣ Install dependencies
       - run: yarn install --frozen-lockfile
-
-      # 7️⃣ Ensure reanimated plugin is available
-      - name: Ensure react-native-reanimated is installed
-        run: yarn add react-native-reanimated@3.6.0 --dev
-
-      # 8️⃣ Set NODE_BINARY for Gradle
+      
+      # 7️⃣ Set NODE_BINARY for Gradle
       - name: Set NODE_BINARY
         run: echo "NODE_BINARY=$(which node)" >> $GITHUB_ENV
-
-      # 9️⃣ Run Reanimated prepare.js
-      - name: Patch react-native-reanimated
-        run: |
-          export NODE_BINARY=$(which node)
-          node ./node_modules/react-native-reanimated/scripts/prepare.js || echo "Skipping prepare.js"
-
-      # 🔟 Clean Gradle
+        
+      # 8️⃣ Clean Gradle
       - name: Clean Gradle
         run: cd android && ./gradlew clean && cd ..
-
-      # 1️⃣1️⃣ Pre-bundle RN assets (AFTER reanimated is patched)
+        
+      # 9️⃣ Bundle React Native assets
       - name: Bundle React Native assets
         run: |
           mkdir -p android/app/src/main/assets
@@ -67,11 +54,12 @@ jobs:
             --bundle-output android/app/src/main/assets/index.android.bundle \
             --assets-dest android/app/src/main/res \
             --reset-cache
-
+            
+      # 🔟 Setup Android SDK
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
-
-      # 1️⃣2️⃣ Install Android SDK
+        
+      # 1️⃣1️⃣ Install Android SDK & NDK
       - name: Install Android SDK & NDK
         run: |
           yes | sdkmanager \
@@ -79,15 +67,15 @@ jobs:
             "platforms;android-34" \
             "build-tools;34.0.0" \
             "ndk;27.1.12297006"
-
-      # 1️⃣3️⃣ Accept licenses
+            
+      # 1️⃣2️⃣ Accept licenses
       - run: yes | sdkmanager --licenses
-
-      # 1️⃣4️⃣ Build APK
+      
+      # 1️⃣3️⃣ Build APK
       - name: Build APK
         run: cd android && ./gradlew assembleRelease --no-daemon --stacktrace
-
-      # 1️⃣5️⃣ Upload artifact
+        
+      # 1️⃣4️⃣ Upload artifact
       - uses: actions/upload-artifact@v4
         with:
           name: demoWallet-release-apk
