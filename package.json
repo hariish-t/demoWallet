@@ -18,9 +18,9 @@
     "@react-navigation/stack": "^6.3.23",
     "react-native-screens": "^3.29.0",
     "react-native-safe-area-context": "^4.8.5",
-    "react-native-gesture-handler": "^2.14.0"
-}
-,
+    "react-native-gesture-handler": "^2.14.0",
+    "@react-native/gradle-plugin": "0.81.4"
+},
   "devDependencies": {
     "@babel/core": "^7.25.2",
     "@babel/preset-env": "^7.25.3",
