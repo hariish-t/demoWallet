@@ -19,17 +19,3 @@ buildscript {
 }
 
 apply plugin: "com.facebook.react.rootproject"
-
-// android {
-//     compileSdkVersion rootProject.ext.compileSdkVersion
-
-//     defaultConfig {
-//         minSdkVersion rootProject.ext.minSdkVersion
-//         targetSdkVersion rootProject.ext.targetSdkVersion
-//     }
-
-//     compileOptions {
-//         sourceCompatibility JavaVersion.VERSION_17
-//         targetCompatibility JavaVersion.VERSION_17
-//     }
-// }
