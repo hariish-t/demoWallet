@@ -43,13 +43,17 @@ jobs:
       - name: Clean Gradle
         run: cd android && ./gradlew clean && cd ..
         
-      # 9️⃣ Enable HTTP cleartext for Ganache connection
-      - name: Enable HTTP cleartext traffic
+      # 9️⃣ Bundle React Native assets
+      - name: Bundle React Native assets
         run: |
-          # Add cleartext traffic permission to Android manifest
-          sed -i '/<application/a\        android:usesCleartextTraffic="true"' android/app/src/main/AndroidManifest.xml
-          
-      # 🔟 Bundle React Native assets
+          mkdir -p android/app/src/main/assets
+          npx react-native bundle \
+            --platform android \
+            --dev false \
+            --entry-file index.js \
+            --bundle-output android/app/src/main/assets/index.android.bundle \
+            --assets-dest android/app/src/main/res \
+            --reset-cache
       - name: Bundle React Native assets
         run: |
           mkdir -p android/app/src/main/assets
