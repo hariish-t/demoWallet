@@ -9,7 +9,7 @@ jobs:
     name: Build Release APK
     runs-on: ubuntu-latest
     steps:
-      # 1️⃣ Checkout code 
+      # 1️⃣ Checkout code
       - uses: actions/checkout@v3
       
       # 2️⃣ Setup JDK
@@ -43,7 +43,13 @@ jobs:
       - name: Clean Gradle
         run: cd android && ./gradlew clean && cd ..
         
-      # 9️⃣ Bundle React Native assets
+      # 9️⃣ Enable HTTP cleartext for Ganache connection
+      - name: Enable HTTP cleartext traffic
+        run: |
+          # Add cleartext traffic permission to Android manifest
+          sed -i '/<application/a\        android:usesCleartextTraffic="true"' android/app/src/main/AndroidManifest.xml
+          
+      # 🔟 Bundle React Native assets
       - name: Bundle React Native assets
         run: |
           mkdir -p android/app/src/main/assets
@@ -70,12 +76,6 @@ jobs:
             
       # 1️⃣2️⃣ Accept licenses
       - run: yes | sdkmanager --licenses
-
-      # Disable New Architecture to avoid C++ compilation issues
-      - name: Disable New Architecture
-        run: |
-          echo "newArchEnabled=false" >> android/gradle.properties
-          echo "hermesEnabled=true" >> android/gradle.properties
       
       # 1️⃣3️⃣ Build APK
       - name: Build APK
