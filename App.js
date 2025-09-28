@@ -22,8 +22,7 @@ export default function App() {
 
   useEffect(() => {
     // Initialize Web3 with local Ganache
-    // Replace YOUR_COMPUTER_IP with your computer's local IP address
-    const web3Instance = new Web3('http://YOUR_COMPUTER_IP:7545');
+    const web3Instance = new Web3('http://10.15.244.52:7545');
     setWeb3(web3Instance);
   }, []);
 
