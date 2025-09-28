@@ -15,49 +15,41 @@ jobs:
       # 1️⃣ Checkout code
       - uses: actions/checkout@v3
 
-      # 2️⃣ Set Android SDK path & environment variables
-      - name: Set Android SDK path
-        run: |
-          echo "ANDROID_HOME=/usr/local/lib/android/sdk" >> $GITHUB_ENV
-          echo "ANDROID_SDK_ROOT=/usr/local/lib/android/sdk" >> $GITHUB_ENV
-          echo "/usr/local/lib/android/sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
-          echo "/usr/local/lib/android/sdk/platform-tools" >> $GITHUB_PATH
-          export ANDROID_HOME=/usr/local/lib/android/sdk
-          export ANDROID_SDK_ROOT=/usr/local/lib/android/sdk
-          export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools
-
-      # 3️⃣ Setup JDK 17
+      # 2️⃣ Setup JDK 17
       - uses: actions/setup-java@v3
         with:
           distribution: temurin
           java-version: 17
 
-      # 4️⃣ Setup Node.js 20
+      # 3️⃣ Setup Node.js 20
       - uses: actions/setup-node@v3
         with:
           node-version: 20
 
-      # 5️⃣ Install Yarn globally
+      # 4️⃣ Install Yarn globally
       - run: npm install -g yarn
 
-      # 6️⃣ Cache node_modules & Gradle
+      # 5️⃣ Cache node_modules & Gradle
       - name: Cache Node modules & Gradle
         uses: actions/cache@v3
         with:
           path: |
             node_modules
             android/.gradle
-          key: ${{ runner.os }}-node-${{ hashFiles('**/yarn.lock') }}
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
 
-      # 7️⃣ Install project dependencies
+      # 6️⃣ Install dependencies
       - run: yarn install --frozen-lockfile
 
-      # 8️⃣ Set NODE_BINARY for Reanimated + Gradle
-      - name: Set NODE_BINARY
-        run: echo "NODE_BINARY=$(which node)" >> $GITHUB_ENV
+      # 7️⃣ Ensure react-native-reanimated plugin exists
+      - name: Ensure reanimated plugin
+        run: |
+          if [ ! -d "node_modules/react-native-reanimated" ]; then
+            yarn add react-native-reanimated
+          fi
 
-      # 9️⃣ Patch react-native-reanimated for CI
-      - name: Patch react-native-reanimated for CI
+      # 8️⃣ Patch reanimated for CI
+      - name: Patch react-native-reanimated
         run: |
           export NODE_BINARY=$(which node)
           if [ -f ./node_modules/react-native-reanimated/scripts/prepare.js ]; then
@@ -66,11 +58,7 @@ jobs:
             echo "Reanimated prepare.js not found, skipping..."
           fi
 
-      # 🔟 Clean Gradle
-      - name: Clean Gradle
-        run: cd android && ./gradlew clean && cd ..
-
-      # 1️⃣1️⃣ Pre-bundle React Native JS assets
+      # 9️⃣ Pre-bundle React Native assets
       - name: Bundle React Native assets
         run: |
           mkdir -p android/app/src/main/assets
@@ -82,23 +70,25 @@ jobs:
             --assets-dest android/app/src/main/res \
             --reset-cache
 
-      # 1️⃣2️⃣ Install required SDK components + NDK
+      # 🔟 Setup Android SDK
       - name: Install Android SDK & NDK
         run: |
+          yes | sdkmanager --licenses
           yes | sdkmanager \
             "platform-tools" \
-            "platforms;android-36" \
-            "build-tools;36.0.0" \
+            "platforms;android-34" \
+            "build-tools;34.0.0" \
             "ndk;27.1.12297006"
 
-      # 1️⃣3️⃣ Accept SDK licenses
-      - run: yes | sdkmanager --licenses
+      # 1️⃣1️⃣ Clean Gradle
+      - name: Clean Gradle
+        run: cd android && ./gradlew clean && cd ..
 
-      # 1️⃣4️⃣ Build Release APK
+      # 1️⃣2️⃣ Build Release APK
       - name: Build APK
         run: cd android && ./gradlew assembleRelease --no-daemon --stacktrace
 
-      # 1️⃣5️⃣ Upload APK artifact
+      # 1️⃣3️⃣ Upload APK artifact
       - uses: actions/upload-artifact@v4
         with:
           name: demoWallet-release-apk
