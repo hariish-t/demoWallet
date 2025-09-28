@@ -68,6 +68,9 @@ jobs:
             --assets-dest android/app/src/main/res \
             --reset-cache
 
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
       # 1️⃣2️⃣ Install Android SDK
       - name: Install Android SDK & NDK
         run: |
