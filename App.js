@@ -1,283 +1,99 @@
-import React, {useState, useEffect} from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  TextInput,
-  Alert,
-  ScrollView,
-  ActivityIndicator,
-} from 'react-native';
-import Web3 from 'web3';
-
-export default function App() {
-  const [web3, setWeb3] = useState(null);
-  const [account, setAccount] = useState('');
-  const [balance, setBalance] = useState('0');
-  const [privateKey, setPrivateKey] = useState('');
-  const [toAddress, setToAddress] = useState('');
-  const [amount, setAmount] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    // Initialize Web3 with local Ganache
-    const web3Instance = new Web3('http://10.15.244.52:7545');
-    setWeb3(web3Instance);
-  }, []);
-
-  const createWallet = () => {
-    if (!web3) return;
-    
-    try {
-      const newAccount = web3.eth.accounts.create();
-      setAccount(newAccount.address);
-      setPrivateKey(newAccount.privateKey);
-      Alert.alert('Wallet Created!', `Address: ${newAccount.address}`);
-    } catch (error) {
-      Alert.alert('Error', 'Failed to create wallet: ' + error.message);
-    }
-  };
-
-  const importWallet = () => {
-    if (!web3 || !privateKey) return;
-
-    try {
-      const importedAccount = web3.eth.accounts.privateKeyToAccount(privateKey);
-      setAccount(importedAccount.address);
-      Alert.alert('Wallet Imported!', `Address: ${importedAccount.address}`);
-      getBalance(importedAccount.address);
-    } catch (error) {
-      Alert.alert('Error', 'Invalid private key');
-    }
-  };
-
-  const getBalance = async (address) => {
-    if (!web3 || !address) return;
-
-    setLoading(true);
-    try {
-      const balanceWei = await web3.eth.getBalance(address);
-      const balanceEth = web3.utils.fromWei(balanceWei, 'ether');
-      setBalance(parseFloat(balanceEth).toFixed(6));
-    } catch (error) {
-      Alert.alert('Error', 'Failed to fetch balance');
-    }
-    setLoading(false);
-  };
-
-  const sendTransaction = async () => {
-    if (!web3 || !privateKey || !toAddress || !amount) {
-      Alert.alert('Error', 'Please fill all fields');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const fromAccount = web3.eth.accounts.privateKeyToAccount(privateKey);
+name: Android Build
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+jobs:
+  build:
+    name: Build Release APK
+    runs-on: ubuntu-latest
+    steps:
+      # 1️⃣ Checkout code
+      - uses: actions/checkout@v3
       
-      // Get gas price and nonce
-      const gasPrice = await web3.eth.getGasPrice();
-      const nonce = await web3.eth.getTransactionCount(fromAccount.address);
-
-      // Create transaction
-      const transaction = {
-        to: toAddress,
-        value: web3.utils.toWei(amount, 'ether'),
-        gas: 21000,
-        gasPrice: gasPrice,
-        nonce: nonce,
-      };
-
-      // Sign transaction
-      const signedTx = await web3.eth.accounts.signTransaction(transaction, privateKey);
-      
-      // Send transaction
-      const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
-      
-      Alert.alert('Success!', `Transaction sent: ${receipt.transactionHash}`);
-      getBalance(fromAccount.address);
-      setToAddress('');
-      setAmount('');
-    } catch (error) {
-      Alert.alert('Error', 'Transaction failed: ' + error.message);
-    }
-    setLoading(false);
-  };
-
-  return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Demo Wallet</Text>
-        <Text style={styles.subtitle}>Basic Ethereum Wallet</Text>
-      </View>
-
-      {account ? (
-        <View style={styles.walletInfo}>
-          <Text style={styles.label}>Wallet Address:</Text>
-          <Text style={styles.address}>{account}</Text>
+      # 2️⃣ Setup JDK
+      - uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 17
           
-          <View style={styles.balanceContainer}>
-            <Text style={styles.label}>Balance:</Text>
-            {loading ? (
-              <ActivityIndicator size="small" color="#007AFF" />
-            ) : (
-              <Text style={styles.balance}>{balance} ETH</Text>
-            )}
-          </View>
-
-          <TouchableOpacity 
-            style={styles.button} 
-            onPress={() => getBalance(account)}
-          >
-            <Text style={styles.buttonText}>Refresh Balance</Text>
-          </TouchableOpacity>
-
-          <View style={styles.sendSection}>
-            <Text style={styles.sectionTitle}>Send Transaction</Text>
-            
-            <TextInput
-              style={styles.input}
-              placeholder="To Address"
-              value={toAddress}
-              onChangeText={setToAddress}
-            />
-            
-            <TextInput
-              style={styles.input}
-              placeholder="Amount (ETH)"
-              value={amount}
-              onChangeText={setAmount}
-              keyboardType="numeric"
-            />
-            
-            <TouchableOpacity 
-              style={[styles.button, styles.sendButton]} 
-              onPress={sendTransaction}
-              disabled={loading}
-            >
-              <Text style={styles.buttonText}>
-                {loading ? 'Sending...' : 'Send Transaction'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      ) : (
-        <View style={styles.createWalletSection}>
-          <TouchableOpacity style={styles.button} onPress={createWallet}>
-            <Text style={styles.buttonText}>Create New Wallet</Text>
-          </TouchableOpacity>
-
-          <Text style={styles.orText}>Or</Text>
-
-          <Text style={styles.label}>Import Existing Wallet:</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter Private Key"
-            value={privateKey}
-            onChangeText={setPrivateKey}
-            secureTextEntry={true}
-          />
+      # 3️⃣ Setup Node
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 20
           
-          <TouchableOpacity style={styles.button} onPress={importWallet}>
-            <Text style={styles.buttonText}>Import Wallet</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-    </ScrollView>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  header: {
-    backgroundColor: '#007AFF',
-    padding: 20,
-    paddingTop: 50,
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: 'white',
-    marginBottom: 5,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: 'white',
-    opacity: 0.9,
-  },
-  walletInfo: {
-    padding: 20,
-  },
-  createWalletSection: {
-    padding: 20,
-    alignItems: 'center',
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 5,
-    color: '#333',
-  },
-  address: {
-    fontSize: 12,
-    color: '#666',
-    backgroundColor: 'white',
-    padding: 10,
-    borderRadius: 5,
-    marginBottom: 20,
-  },
-  balanceContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  balance: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#007AFF',
-  },
-  button: {
-    backgroundColor: '#007AFF',
-    padding: 15,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  sendButton: {
-    backgroundColor: '#FF6B35',
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  input: {
-    backgroundColor: 'white',
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 15,
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: '#ddd',
-  },
-  sendSection: {
-    marginTop: 30,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 15,
-    color: '#333',
-  },
-  orText: {
-    fontSize: 16,
-    color: '#666',
-    marginVertical: 20,
-  },
-});
+      # 4️⃣ Install Yarn
+      - run: npm install -g yarn
+      
+      # 5️⃣ Cache node_modules
+      - uses: actions/cache@v3
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-modules-${{ hashFiles('**/yarn.lock') }}
+          
+      # 6️⃣ Install dependencies
+      - run: yarn install --frozen-lockfile
+      
+      # 7️⃣ Set NODE_BINARY for Gradle
+      - name: Set NODE_BINARY
+        run: echo "NODE_BINARY=$(which node)" >> $GITHUB_ENV
+        
+      # 8️⃣ Clean Gradle
+      - name: Clean Gradle
+        run: cd android && ./gradlew clean && cd ..
+        
+      # 9️⃣ Enable HTTP cleartext for Ganache connection
+      - name: Enable HTTP cleartext traffic
+        run: |
+          # Create network security config to allow HTTP to local IP
+          mkdir -p android/app/src/main/res/xml
+          cat > android/app/src/main/res/xml/network_security_config.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <network-security-config>
+              <domain-config cleartextTrafficPermitted="true">
+                  <domain includeSubdomains="true">10.15.244.52</domain>
+              </domain-config>
+          </network-security-config>
+          EOF
+          
+          # Add network security config reference to AndroidManifest.xml
+          sed -i 's/<application/<application android:networkSecurityConfig="@xml\/network_security_config"/' android/app/src/main/AndroidManifest.xml
+          
+      # 🔟 Bundle React Native assets
+      - name: Bundle React Native assets
+        run: |
+          mkdir -p android/app/src/main/assets
+          npx react-native bundle \
+            --platform android \
+            --dev false \
+            --entry-file index.js \
+            --bundle-output android/app/src/main/assets/index.android.bundle \
+            --assets-dest android/app/src/main/res \
+            --reset-cache
+            
+      # 🔟 Setup Android SDK
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        
+      # 1️⃣1️⃣ Install Android SDK & NDK
+      - name: Install Android SDK & NDK
+        run: |
+          yes | sdkmanager \
+            "platform-tools" \
+            "platforms;android-34" \
+            "build-tools;34.0.0" \
+            "ndk;27.1.12297006"
+            
+      # 1️⃣2️⃣ Accept licenses
+      - run: yes | sdkmanager --licenses
+      
+      # 1️⃣3️⃣ Build APK
+      - name: Build APK
+        run: cd android && ./gradlew assembleRelease --no-daemon --stacktrace
+        
+      # 1️⃣4️⃣ Upload artifact
+      - uses: actions/upload-artifact@v4
+        with:
+          name: demoWallet-release-apk
+          path: android/app/build/outputs/apk/release/app-release.apk
