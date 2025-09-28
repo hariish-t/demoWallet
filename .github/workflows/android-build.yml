@@ -1,5 +1,5 @@
 name: Android Build
-on: 
+on:
   push:
     branches:
       - main
@@ -26,26 +26,24 @@ jobs:
       # 4️⃣ Install Yarn
       - run: npm install -g yarn
       
-      # 5️⃣ Remove node_modules to ensure fresh install
-      - name: Remove node_modules
-        run: rm -rf node_modules
-        
-      # 6️⃣ Clean Gradle cache
-      - name: Clean Gradle cache
-        run: rm -rf ~/.gradle/caches/
+      # 5️⃣ Cache node_modules
+      - uses: actions/cache@v3
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-modules-${{ hashFiles('**/yarn.lock') }}
           
-      # 7️⃣ Install dependencies
+      # 6️⃣ Install dependencies
       - run: yarn install --frozen-lockfile
       
-      # 8️⃣ Set NODE_BINARY for Gradle
+      # 7️⃣ Set NODE_BINARY for Gradle
       - name: Set NODE_BINARY
         run: echo "NODE_BINARY=$(which node)" >> $GITHUB_ENV
         
-      # 9️⃣ Clean Gradle build outputs
+      # 8️⃣ Clean Gradle
       - name: Clean Gradle
         run: cd android && ./gradlew clean && cd ..
         
-      # 🔟 Bundle React Native assets
+      # 9️⃣ Bundle React Native assets
       - name: Bundle React Native assets
         run: |
           mkdir -p android/app/src/main/assets
@@ -57,11 +55,11 @@ jobs:
             --assets-dest android/app/src/main/res \
             --reset-cache
             
-      # 1️⃣1️⃣ Setup Android SDK
+      # 🔟 Setup Android SDK
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         
-      # 1️⃣2️⃣ Install Android SDK & NDK
+      # 1️⃣1️⃣ Install Android SDK & NDK
       - name: Install Android SDK & NDK
         run: |
           yes | sdkmanager \
@@ -70,7 +68,7 @@ jobs:
             "build-tools;34.0.0" \
             "ndk;27.1.12297006"
             
-      # 1️⃣3️⃣ Accept licenses
+      # 1️⃣2️⃣ Accept licenses
       - run: yes | sdkmanager --licenses
 
       # Disable New Architecture to avoid C++ compilation issues
@@ -79,11 +77,11 @@ jobs:
           echo "newArchEnabled=false" >> android/gradle.properties
           echo "hermesEnabled=true" >> android/gradle.properties
       
-      # 1️⃣4️⃣ Build APK with warnings enabled to see deprecated usage
+      # 1️⃣3️⃣ Build APK
       - name: Build APK
-        run: cd android && ./gradlew assembleRelease --no-daemon --stacktrace --warning-mode all
-
-      # 1️⃣5️⃣ Upload artifact
+        run: cd android && ./gradlew assembleRelease --no-daemon --stacktrace
+        
+      # 1️⃣4️⃣ Upload artifact
       - uses: actions/upload-artifact@v4
         with:
           name: demoWallet-release-apk
