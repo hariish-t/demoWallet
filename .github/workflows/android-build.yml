@@ -70,6 +70,12 @@ jobs:
             
       # 1️⃣2️⃣ Accept licenses
       - run: yes | sdkmanager --licenses
+
+      # Disable New Architecture to avoid C++ compilation issues
+      - name: Disable New Architecture
+        run: |
+          echo "newArchEnabled=false" >> android/gradle.properties
+          echo "hermesEnabled=true" >> android/gradle.properties
       
       # 1️⃣3️⃣ Build APK
       - name: Build APK
