@@ -22,8 +22,8 @@ export default function App() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Initialize Web3 with Holesky testnet (reliable for mobile apps)
-    const web3Instance = new Web3('https://holesky.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161');
+    // Initialize Web3 with local Hardhat via ngrok tunnel
+    const web3Instance = new Web3('https://comely-brenna-epigeous.ngrok-free.dev');
     setWeb3(web3Instance);
   }, []);
 
